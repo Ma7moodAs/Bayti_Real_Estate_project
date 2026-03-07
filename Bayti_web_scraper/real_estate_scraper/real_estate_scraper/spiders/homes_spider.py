@@ -1,6 +1,6 @@
 import scrapy
 import re
-
+from real_estate_scraper.items import RealEstateScraperItem
 class HomesSpiderSpider(scrapy.Spider):
     name = "homes_spider"
     allowed_domains = ["www.homes-jordan.com"]
@@ -149,23 +149,28 @@ class HomesSpiderSpider(scrapy.Spider):
             '/parent::p/following-sibling::p[1]//text()').getall()
         specialities = ' '.join(specialities).strip() if specialities else None
 
-        yield {
-            'Listing_type': listing_type,
-            'URL': response.url,
-            'Bedrooms': Bedrooms,
-            'Bathrooms': Bathrooms,
-            'Area_sqm': Area_sqm,
-            'Price_monthly': price_monthly if listing_type == 'rent' else None,
-            'Price_annualy': price_annualy if listing_type == 'rent' else None,
-            'Sale_price': sale_price if listing_type == 'sale' else None,
-            'Furnished': furnished,
-            'Pool': pool,
-            'Floor': floor,
-            'Floor_type': floor_type,
-            'Location': location,
-            'Description': description,
-            'Specialities': specialities
-        }
+
+        # Storing the extracted data
+        item = RealEstateScraperItem()
+        
+        
+        item['Listing_type'] = listing_type
+        item['URL'] = response.url
+        item['Bedrooms'] = Bedrooms
+        item['Bathrooms'] = Bathrooms
+        item['Area_sqm'] = Area_sqm
+        item['Price_monthly']= price_monthly if listing_type == 'rent' else None
+        item['Price_annualy'] = price_annualy if listing_type == 'rent' else None
+        item['Sale_price'] = sale_price if listing_type == 'sale' else None
+        item['Furnished'] = furnished
+        item['Pool'] = pool
+        item['Floor'] = floor
+        item['Floor_type'] = floor_type
+        item['Location'] = location
+        item['Description'] = description
+        item['Specialities'] = specialities
+        
+        yield item
         
         
         

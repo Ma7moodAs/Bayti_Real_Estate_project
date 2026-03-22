@@ -143,3 +143,36 @@ def clean_data(df):
 
 
 
+'''
+def impute_price_from_similar_properties(df,target_col,listing_type,min_group_size=3):
+    # use comparable properties from the same listing type and estimate price via median price per sqm
+    type_mask = df['Listing_type'] == listing_type
+    price_per_sqm = f'{target_col}_per_sqm'
+
+    comparable_mask = type_mask & df[target_col].notna() & df['Area_sqm'].gt(0)
+    df.loc[comparable_mask,price_per_sqm] = df.loc[comparable_mask,target_col] / df.loc[comparable_mask,'Area_sqm']
+
+    missing_mask = type_mask & df[target_col].isna() & df['Area_sqm'].notna() & df['Area_sqm'].gt(0)
+
+    for idx,row in df.loc[missing_mask,:].iterrows():
+        group_candidates = [
+            comparable_mask & (df['Location'] == row['Location']) & (df['Bedrooms'] == row['Bedrooms']),
+            comparable_mask & (df['Location'] == row['Location']),
+            comparable_mask & (df['Bedrooms'] == row['Bedrooms']),
+            comparable_mask
+        ]
+
+        estimated_price = np.nan
+        for candidate_mask in group_candidates:
+            comparable_prices = df.loc[candidate_mask,price_per_sqm].dropna()
+            if len(comparable_prices) >= min_group_size:
+                estimated_price = comparable_prices.median() * row['Area_sqm']
+                break
+
+        if pd.notna(estimated_price):
+            df.loc[idx,target_col] = round(estimated_price,2)
+
+    df.drop(columns=[price_per_sqm],inplace=True,errors='ignore')
+    return df
+
+'''

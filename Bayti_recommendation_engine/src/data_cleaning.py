@@ -15,11 +15,31 @@ def extract_data(text, patterns):
     return np.nan
 
 
+def extract_bedrooms_num(text):
+    patterns = [
+        r"(\d+)\s*غرف\s*نوم",
+        r"غرف\s*نوم\s*عدد\s*(\d+)",
+        r"(\d+)\s*غرفة\s*نوم",
+        r"غرفة\s*نوم\s*عدد\s*(\d+)",
+    ]
+    value = extract_data(text, patterns)
+    if pd.notna(value):
+        return value
+
+    if pd.notna(text) and re.search(r"غرفة\s*نوم(?:\s*ماستر)?", str(text)):
+        return 1
+
+    if pd.notna(text) and re.search(r"غرف\s*نوم\s*ماستر", str(text)):
+        return 1
+
+    return np.nan
+
+
 def extract_bathrooms_num(text):
     patterns = [
         r"(\d+)\s*حمامات",
         r"حمامات\s*عدد\s*(\d+)",
-        r"(\d+)\s*حمام"
+        r"(\d+)\s*حمام",
     ]
     return extract_data(text, patterns)
 
@@ -29,7 +49,7 @@ def extract_annualy_price(text):
         r"السعر\s*\(?سنوي(?:ا|اً)?\)?\s*[:\-]?\s*([\d,]+)",
         r"سنوي(?:ا|اً)?\s*[:\-]?\s*([\d,]+)",
         r"([\d,]+)\s*دينار(?:\s*اردني)?\s*(?:سنوي|سنويا|سنوياً)",
-        r"السعر\s*[:\-]?\s*([\d,]+)"
+        r"السعر\s*[:\-]?\s*([\d,]+)",
     ]
     return extract_data(text, patterns)
 
@@ -37,9 +57,19 @@ def extract_annualy_price(text):
 def extract_sale_price(text):
     patterns = [
         r"السعر\s*[:\-]?\s*([\d,]+)",
-        r"سعر\s*\(?البيع\)?\s*[:\-]?\s*([\d,]+)"
+        r"سعر\s*\(?البيع\)?\s*[:\-]?\s*([\d,]+)",
     ]
     return extract_data(text, patterns)
+
+
+def fill_bedrooms_num(row):
+    if pd.notna(row["Bedrooms"]) and row["Bedrooms"] != 0:
+        return row["Bedrooms"]
+
+    value = extract_bedrooms_num(row["Description"])
+    if pd.isna(value):
+        value = extract_bedrooms_num(row["Specialities"])
+    return value
 
 
 def fill_bathrooms_num(row):
@@ -73,6 +103,9 @@ def fill_sale_price(row):
 
 
 def feature_recovery(df):
+    bed_mask = df["Bedrooms"].isna() | (df["Bedrooms"] == 0)
+    df.loc[bed_mask, "Bedrooms"] = df.loc[bed_mask, :].apply(fill_bedrooms_num, axis=1)
+
     bath_mask = df["Bathrooms"].isna()
     df.loc[bath_mask, "Bathrooms"] = df.loc[bath_mask, :].apply(fill_bathrooms_num, axis=1)
 

@@ -3,16 +3,23 @@ import numpy as np
 import re
 
 
-def extract_data(text, patterns):
+def extract_data(text, patterns, return_type='float'):
     if pd.isna(text):
         return np.nan
 
     for pattern in patterns:
         match_pattern = re.search(pattern=pattern, string=str(text))
         if match_pattern:
-            value = match_pattern.group(1).replace(",", "")
-            return int(value)
+            try:
+                value = match_pattern.group(1).replace(",", "")
+                if return_type == 'int':
+                    return int(float(value))
+                else:
+                    return float(value)
+            except:
+                return np.nan
     return np.nan
+
 
 
 def extract_bedrooms_num(text):
@@ -22,7 +29,7 @@ def extract_bedrooms_num(text):
         r"(\d+)\s*غرفة\s*نوم",
         r"غرفة\s*نوم\s*عدد\s*(\d+)",
     ]
-    value = extract_data(text, patterns)
+    value = extract_data(text, patterns,return_type='int')
     if pd.notna(value):
         return value
 
@@ -41,7 +48,7 @@ def extract_bathrooms_num(text):
         r"حمامات\s*عدد\s*(\d+)",
         r"(\d+)\s*حمام",
     ]
-    return extract_data(text, patterns)
+    return extract_data(text, patterns,return_type='int')
 
 
 def extract_annualy_price(text):
@@ -51,7 +58,7 @@ def extract_annualy_price(text):
         r"([\d,]+)\s*دينار(?:\s*اردني)?\s*(?:سنوي|سنويا|سنوياً)",
         r"السعر\s*[:\-]?\s*([\d,]+)",
     ]
-    return extract_data(text, patterns)
+    return extract_data(text, patterns, return_type='float')
 
 
 def extract_sale_price(text):
@@ -59,7 +66,7 @@ def extract_sale_price(text):
         r"السعر\s*[:\-]?\s*([\d,]+)",
         r"سعر\s*\(?البيع\)?\s*[:\-]?\s*([\d,]+)",
     ]
-    return extract_data(text, patterns)
+    return extract_data(text, patterns,return_type='float')
 
 
 def fill_bedrooms_num(row):

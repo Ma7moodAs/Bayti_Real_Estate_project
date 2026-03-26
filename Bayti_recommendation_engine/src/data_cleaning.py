@@ -90,7 +90,7 @@ def fill_bathrooms_num(row):
 
 
 def fill_annualy_price(row):
-    if pd.notna(row["Price_annualy"]):
+    if (pd.notna(row["Price_annualy"])) and (row['Price_annualy'] > 1000):
         return row["Price_annualy"]
 
     value = extract_annualy_price(row["Specialities"])
@@ -100,7 +100,7 @@ def fill_annualy_price(row):
 
 
 def fill_sale_price(row):
-    if pd.notna(row["Sale_price"]):
+    if (pd.notna(row["Sale_price"]) and row['Sale_price'] > 1000):
         return row["Sale_price"]
 
     value = extract_sale_price(row["Description"])
@@ -115,14 +115,16 @@ def feature_recovery(df):
 
     bath_mask = df["Bathrooms"].isna()
     df.loc[bath_mask, "Bathrooms"] = df.loc[bath_mask, :].apply(fill_bathrooms_num, axis=1)
-
-    annualy_price_mask = (df["Price_annualy"].isna()) & (df["Listing_type"] == "rent")
+ 
+    annualy_price_mask = ((df["Price_annualy"].isna()) | df['Price_annualy'] <= 1000)\
+          & (df["Listing_type"] == "rent")
     df.loc[annualy_price_mask, "Price_annualy"] = df.loc[annualy_price_mask, :].apply(
         fill_annualy_price,
         axis=1,
     )
 
-    sale_price_mask = (df["Sale_price"].isna()) & (df["Listing_type"] == "sale")
+    sale_price_mask = ((df["Sale_price"].isna()) | df['Sale_price'] <= 1000)\
+          & (df["Listing_type"] == "sale")
     df.loc[sale_price_mask, "Sale_price"] = df.loc[sale_price_mask, :].apply(
         fill_sale_price,
         axis=1,
@@ -143,8 +145,13 @@ def missing_values_handling(df):
     df = df.dropna(subset=["Location"]).copy()
 
     # Treat invalid sale-price outliers as missing so they are removed with the unresolved prices.
-    df.loc[(df["Listing_type"] == "sale") & (df["Sale_price"] == 1), "Sale_price"] = np.nan
-
+    #df.loc[(df["Listing_type"] == "sale") & (df["Sale_price"] == 1), "Sale_price"] = np.nan
+    # comment out the above line because I have fixed the invalid prices 
+    # by extracting them using the feature extraction functions, so there is no need 
+    # for this line because it will be redundant 
+    # and will cause the code to break if it tries to convert the valid prices that I have
+    #  extracted to NaN
+    
     df["Final_price"] = np.where(
         df["Listing_type"] == "sale",
         df["Sale_price"],
@@ -158,7 +165,7 @@ def missing_values_handling(df):
 
 
 def fix_dtypes(df):
-    df["Bedrooms"] = df["Bedrooms"].astype("Int64")
+    df["Bedrooms"] = df["Bedrooms"].astype("Int64") # Int64 allows NaN values, unlike int46 which does not and causes the code to break when the data contains Nan
     df["Bathrooms"] = df["Bathrooms"].astype("Int64")
     df["Area_sqm"] = df["Area_sqm"].astype("float64")
     df["Final_price"] = df["Final_price"].astype("float64")

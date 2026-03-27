@@ -116,14 +116,14 @@ def feature_recovery(df):
     bath_mask = df["Bathrooms"].isna()
     df.loc[bath_mask, "Bathrooms"] = df.loc[bath_mask, :].apply(fill_bathrooms_num, axis=1)
  
-    annualy_price_mask = ((df["Price_annualy"].isna()) | df['Price_annualy'] <= 1000)\
+    annualy_price_mask = ((df["Price_annualy"].isna()) | (df['Price_annualy'] <= 1000))\
           & (df["Listing_type"] == "rent")
     df.loc[annualy_price_mask, "Price_annualy"] = df.loc[annualy_price_mask, :].apply(
         fill_annualy_price,
         axis=1,
     )
 
-    sale_price_mask = ((df["Sale_price"].isna()) | df['Sale_price'] <= 1000)\
+    sale_price_mask = ((df["Sale_price"].isna()) | (df['Sale_price'] <= 1000))\
           & (df["Listing_type"] == "sale")
     df.loc[sale_price_mask, "Sale_price"] = df.loc[sale_price_mask, :].apply(
         fill_sale_price,
